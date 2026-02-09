@@ -55,37 +55,65 @@
             z-index: 0;
         }
 
-        /* Animated outline glow container */
+        /* Animated border glow - traveling spotlight effect */
         .card::after {
             content: '';
             position: absolute;
-            top: -4px;
-            left: -4px;
-            right: -4px;
-            bottom: -4px;
-            border-radius: 25px;
-            background: linear-gradient(90deg,
-                    transparent 0%,
-                    transparent 40%,
-                    rgba(212, 165, 116, 0.6) 50%,
-                    rgba(212, 165, 116, 0.8) 52%,
-                    rgba(212, 165, 116, 0.6) 54%,
-                    transparent 60%,
-                    transparent 100%);
-            background-size: 200% 100%;
-            animation: outline-glow 8s linear infinite;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 26px;
+            background: conic-gradient(from var(--glow-angle, 0deg),
+                    transparent 0deg,
+                    transparent 300deg,
+                    rgba(212, 165, 116, 0.3) 330deg,
+                    rgba(212, 165, 116, 0.6) 345deg,
+                    #d4a574 360deg,
+                    rgba(212, 165, 116, 0.6) 375deg,
+                    rgba(212, 165, 116, 0.3) 390deg,
+                    transparent 420deg,
+                    transparent 360deg);
             z-index: -1;
-            filter: blur(8px);
+            animation: border-rotate 7s linear infinite reverse;
+            filter: blur(6px);
         }
 
-        @keyframes outline-glow {
+        /* Inner sharp glow line */
+        .card-glow-border {
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 25px;
+            background: conic-gradient(from var(--glow-angle, 0deg),
+                    transparent 0deg,
+                    transparent 340deg,
+                    rgba(212, 165, 116, 0.8) 355deg,
+                    #d4a574 360deg,
+                    rgba(212, 165, 116, 0.8) 365deg,
+                    transparent 380deg,
+                    transparent 360deg);
+            z-index: -1;
+            animation: border-rotate 7s linear infinite reverse;
+            pointer-events: none;
+        }
+
+        @keyframes border-rotate {
             0% {
-                background-position: 200% 0;
+                --glow-angle: 0deg;
             }
 
             100% {
-                background-position: -200% 0;
+                --glow-angle: 360deg;
             }
+        }
+
+        @property --glow-angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
         }
 
         @keyframes pulse-glow {
@@ -360,6 +388,7 @@
 <body>
     <div class="container">
         <div class="card">
+            <div class="card-glow-border"></div>
             <div class="content">
                 <div class="header">
                     <div class="logo">NORAH LABS</div>
