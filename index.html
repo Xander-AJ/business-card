@@ -369,18 +369,76 @@
             transform: translateX(-50%) translateY(100px);
             background: #d4a574;
             color: #0f1937;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 14px 28px;
+            border-radius: 10px;
             font-size: 14px;
             font-weight: 600;
             opacity: 0;
             transition: all 0.3s;
             z-index: 1000;
+            max-width: 90%;
+            text-align: center;
+            line-height: 1.4;
         }
 
         .toast.show {
             transform: translateX(-50%) translateY(0);
             opacity: 1;
+        }
+
+        /* QR Code Section - Desktop Only */
+        .qr-section {
+            background: rgba(212, 165, 116, 0.08);
+            border: 1px solid rgba(212, 165, 116, 0.25);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .qr-code-wrapper {
+            padding: 12px;
+            background: #0f1937;
+            border-radius: 12px;
+            border: 2px solid rgba(212, 165, 116, 0.3);
+        }
+
+        .qr-code-wrapper canvas {
+            display: block;
+        }
+
+        .qr-hint {
+            font-size: 12px;
+            color: #b8b8b8;
+            font-style: italic;
+        }
+
+        /* Hide QR on mobile */
+        @media (max-width: 768px) {
+            .qr-section.mobile-hidden {
+                display: none;
+            }
+        }
+
+        /* Copy Contact button style */
+        .btn-tertiary {
+            background: transparent;
+            color: #d4a574;
+            border: 1px dashed rgba(212, 165, 116, 0.4);
+            font-size: 12px;
+            padding: 10px 16px;
+        }
+
+        .btn-tertiary:hover {
+            background: rgba(212, 165, 116, 0.1);
+            border-style: solid;
         }
     </style>
 </head>
@@ -433,6 +491,17 @@
                 </div>
 
 
+                <!-- QR Code Section - Desktop Only -->
+                <div class="qr-section" id="qrSection">
+                    <div class="section-label">Quick Save to Contacts</div>
+                    <div class="qr-container">
+                        <div class="qr-code-wrapper">
+                            <div id="qrcode"></div>
+                        </div>
+                        <div class="qr-hint">Scan with your phone to save contact</div>
+                    </div>
+                </div>
+
                 <div class="products">
                     <div class="section-label">Our Products</div>
 
@@ -477,6 +546,9 @@
 
     <div class="toast" id="toast"></div>
 
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     <script>
         // vCard data
         const vCardData = `BEGIN:VCARD
@@ -491,6 +563,44 @@ URL:https://www.norahlabs.com
 ADR;TYPE=WORK:;;Nairobi;Nairobi;00100;Kenya
 NOTE:Technology That Understands People - Full-Stack Development, AI Integration, Design, Communications, Public Relations
 END:VCARD`;
+
+        // Device detection
+        const deviceInfo = {
+            isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+            isIOS: /iPhone|iPad|iPod/i.test(navigator.userAgent),
+            isAndroid: /Android/i.test(navigator.userAgent),
+            isDesktop: !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            const qrSection = document.getElementById('qrSection');
+
+            if (deviceInfo.isMobile) {
+                // Hide QR code on mobile
+                qrSection.classList.add('mobile-hidden');
+            } else {
+                // Generate QR code for desktop users
+                generateQRCode();
+            }
+        });
+
+        function generateQRCode() {
+            const qrcodeContainer = document.getElementById('qrcode');
+            if (qrcodeContainer && typeof QRCode !== 'undefined') {
+                // Clear any existing QR code
+                qrcodeContainer.innerHTML = '';
+
+                new QRCode(qrcodeContainer, {
+                    text: vCardData,
+                    width: 180,
+                    height: 180,
+                    colorDark: "#d4a574",
+                    colorLight: "#0f1937",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
+        }
 
         function saveContact() {
             // Create blob from vCard data
@@ -510,7 +620,30 @@ END:VCARD`;
             // Clean up
             window.URL.revokeObjectURL(url);
 
-            showToast('Contact saved! Check your downloads.');
+            // Show device-specific toast message
+            if (deviceInfo.isIOS) {
+                showToast('📱 Check your Downloads folder, then tap the .vcf file to add to Contacts', 6000);
+            } else if (deviceInfo.isAndroid) {
+                showToast('📱 Open your Downloads folder and tap the .vcf file to save to Contacts', 6000);
+            } else {
+                showToast('✅ Contact saved! Check your downloads.', 4000);
+            }
+        }
+
+        async function copyContactInfo() {
+            const contactText = `John Alexander Kamau
+Founder & Technical Lead @ Norah Labs
+📱 +254 748665382
+✉️ norahlabs.hq@gmail.com
+🌐 www.norahlabs.com
+📍 Nairobi, Kenya`;
+
+            try {
+                await navigator.clipboard.writeText(contactText);
+                showToast('📋 Contact info copied to clipboard!', 4000);
+            } catch (err) {
+                showToast('Unable to copy. Please try the Save Contact button.', 4000);
+            }
         }
 
         async function shareCard() {
@@ -523,33 +656,33 @@ END:VCARD`;
             try {
                 if (navigator.share) {
                     await navigator.share(shareData);
-                    showToast('Thanks for sharing!');
+                    showToast('Thanks for sharing!', 3000);
                 } else {
                     // Fallback: copy link to clipboard
                     await navigator.clipboard.writeText(window.location.href);
-                    showToast('Link copied to clipboard!');
+                    showToast('Link copied to clipboard!', 3000);
                 }
             } catch (err) {
                 if (err.name !== 'AbortError') {
                     // Fallback: copy link to clipboard
                     try {
                         await navigator.clipboard.writeText(window.location.href);
-                        showToast('Link copied to clipboard!');
+                        showToast('Link copied to clipboard!', 3000);
                     } catch (e) {
-                        showToast('Unable to share. Please copy the URL manually.');
+                        showToast('Unable to share. Please copy the URL manually.', 4000);
                     }
                 }
             }
         }
 
-        function showToast(message) {
+        function showToast(message, duration = 3000) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.classList.add('show');
 
             setTimeout(() => {
                 toast.classList.remove('show');
-            }, 3000);
+            }, duration);
         }
     </script>
 </body>
